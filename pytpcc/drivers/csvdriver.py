@@ -29,7 +29,7 @@ import csv
 from datetime import datetime
 from pprint import pprint,pformat
 
-from abstractdriver import *
+from .abstractdriver import *
 
 ## ==============================================
 ## CSVDriver
@@ -54,7 +54,7 @@ class CsvDriver(AbstractDriver):
     ## DEF
     
     def loadConfig(self, config):
-        for key in CsvDriver.DEFAULT_CONFIG.keys():
+        for key in list(CsvDriver.DEFAULT_CONFIG.keys()):
             assert key in config, "Missing parameter '%s' in %s configuration" % (key, self.name)
         
         self.table_directory = config["table_directory"]
@@ -78,7 +78,7 @@ class CsvDriver(AbstractDriver):
         if not txn in self.txn_outputs:
             path = os.path.join(self.txn_directory, "%s.csv" % txn)
             self.txn_outputs[txn] = csv.writer(open(path, 'wb'), quoting=csv.QUOTE_ALL)
-            self.txn_params[txn] = params.keys()[:]
+            self.txn_params[txn] = list(params.keys())[:]
             self.txn_outputs[txn].writerow(["Timestamp"] + self.txn_params[txn])
         ## IF
         row = [datetime.now()] + [params[k] for k in self.txn_params[txn]]

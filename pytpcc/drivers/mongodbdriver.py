@@ -29,15 +29,16 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 # -----------------------------------------------------------------------
 
-from __future__ import with_statement
+
 
 import sys
 import json
 import logging
-import urllib
+import urllib.request, urllib.parse, urllib.error
 from pprint import pformat
 from time import sleep
 import pymongo
+from pymongo.client_session import TransactionOptions
 
 import constants
 from .abstractdriver import AbstractDriver
@@ -288,8 +289,8 @@ class MongodbDriver(AbstractDriver):
             if not 'passwd' in config:
                 logging.error("must specify password if user is specified")
                 sys.exit(1)
-            userpassword = urllib.quote_plus(user)+':'+urllib.quote_plus(config['passwd'])+"@"
-            usersecret = urllib.quote_plus(user)+':'+ '*'*len(config['passwd']) + "@"
+            userpassword = urllib.parse.quote_plus(user)+':'+urllib.parse.quote_plus(config['passwd'])+"@"
+            usersecret = urllib.parse.quote_plus(user)+':'+ '*'*len(config['passwd']) + "@"
 
         pindex = 10  # "mongodb://"
         if uri[0:14] == "mongodb+srv://":
@@ -347,7 +348,7 @@ class MongodbDriver(AbstractDriver):
             return
         except pymongo.errors.PyMongoError as err:
             logging.error("Some general error (%s) when connected to %s: ", str(err), display_uri)
-            print("Got some other error: %s" % str(err))
+            print(("Got some other error: %s" % str(err)))
             return
 
     ## ----------------------------------------------
@@ -360,7 +361,7 @@ class MongodbDriver(AbstractDriver):
 
         assert tableName in TABLE_COLUMNS, "Table %s not found in TABLE_COLUMNS" % tableName
         columns = TABLE_COLUMNS[tableName]
-        num_columns = range(len(columns))
+        num_columns = list(range(len(columns)))
 
         tuple_dicts = []
 
@@ -395,7 +396,7 @@ class MongodbDriver(AbstractDriver):
             if tableName == constants.TABLENAME_ITEM:
                 tuples3 = []
                 if self.shards > 1:
-                    ww = range(1,self.warehouses+1)
+                    ww = list(range(1,self.warehouses+1))
                 else:
                     ww = [0]
                 for t in tuples:
@@ -404,7 +405,12 @@ class MongodbDriver(AbstractDriver):
                        t2.append(w)
                        tuples3.append(t2)
                 tuples = tuples3
+            
             for t in tuples:
+                if len(t) != len(columns):
+                    logging.error(f"Mismatch: columns({len(columns)}): {columns}, tuple({len(t)}): {t}")
+                    raise ValueError(f"Mismatch between columns and tuple data: columns({len(columns)}), tuple({len(t)})")
+
                 tuple_dicts.append(dict([(columns[i], t[i]) for i in num_columns]))
             ## FOR
 
@@ -416,7 +422,7 @@ class MongodbDriver(AbstractDriver):
     def loadFinishDistrict(self, w_id, d_id):
         if self.denormalize:
             logging.debug("Pushing %d denormalized ORDERS records for WAREHOUSE %d DISTRICT %d into MongoDB", len(self.w_orders), w_id, d_id)
-            self.database[constants.TABLENAME_ORDERS].insert(self.w_orders.values())
+            self.database[constants.TABLENAME_ORDERS].insert_many(list(self.w_orders.values()))
             self.w_orders.clear()
         ## IF
 
@@ -586,14 +592,16 @@ class MongodbDriver(AbstractDriver):
         # getDistrict
         district_project = {"_id":0, "D_ID":1, "D_W_ID":1, "D_TAX": 1, "D_NEXT_O_ID": 1}
         if self.find_and_modify:
-            d = self.district.find_one_and_update({"D_ID": d_id, "D_W_ID": w_id, "$comment": comment},
-                                                  {"$inc":{"D_NEXT_O_ID":1}},
-                                                  projection=district_project,
-                                                  sort=[("NO_O_ID", 1)],
-                                                  session=s)
+            d = self.district.find_one_and_update(
+                {"D_ID": d_id, "D_W_ID": w_id},  # Query filter
+                {"$inc": {"D_NEXT_O_ID": 1}},    # Update operation
+                projection=district_project,     # Fields to project
+                session=s,                       # Active session
+                comment=comment                  # Optional comment for the operation
+            )
             if not d:
                 d1 = self.district.find_one({"D_ID": d_id, "D_W_ID": w_id, "$comment": "new order did not find district"})
-                print(d1, w_id, d_id, c_id, i_ids, i_w_ids, s_dist_col)
+                print((d1, w_id, d_id, c_id, i_ids, i_w_ids, s_dist_col))
             assert d, "Couldn't find district in new order w_id %d d_id %d" % (w_id, d_id)
         else:
             d = self.district.find_one({"D_ID": d_id, "D_W_ID": w_id, "$comment": comment},
@@ -621,7 +629,7 @@ class MongodbDriver(AbstractDriver):
             #print constants.INVALID_ITEM_MESSAGE + ", Aborting transaction (ok for 1%)"
             return None
         ## IF
-        xxi_ids = tuple(map(lambda o: o['I_ID'], items))
+        xxi_ids = tuple([o['I_ID'] for o in items])
         items = sorted(items, key=lambda x: xxi_ids.index(x['I_ID']))
 
         # getWarehouseTaxRate
@@ -661,7 +669,7 @@ class MongodbDriver(AbstractDriver):
         ## If all of the items are at the same warehouse, then we'll issue a single
         ## request to get their information, otherwise we'll still issue a single request
         ## ----------------
-        item_w_list = zip(i_ids, i_w_ids)
+        item_w_list = list(zip(i_ids, i_w_ids))
         stock_project = {"_id":0, "S_I_ID": 1, "S_W_ID": 1,
                          "S_QUANTITY": 1, "S_DATA": 1, "S_YTD": 1,
                          "S_ORDER_CNT": 1, "S_REMOTE_CNT": 1, s_dist_col: 1}
@@ -671,13 +679,13 @@ class MongodbDriver(AbstractDriver):
                                               session=s))
         else:
             field_list = ["S_I_ID", "S_W_ID"]
-            search_list = [dict(zip(field_list, ze)) for ze in item_w_list]
+            search_list = [dict(list(zip(field_list, ze))) for ze in item_w_list]
             all_stocks = list(self.stock.find({"$or": search_list, "$comment": comment},
                                               stock_project,
                                               session=s))
         ## IF
         assert len(all_stocks) == ol_cnt, "all_stocks len %d != ol_cnt %d" % (len(all_stocks), ol_cnt)
-        xxxi_ids = tuple(map(lambda o: (o['S_I_ID'], o['S_W_ID']), all_stocks))
+        xxxi_ids = tuple([(o['S_I_ID'], o['S_W_ID']) for o in all_stocks])
         all_stocks = sorted(all_stocks, key=lambda x: xxxi_ids.index((x['S_I_ID'], x["S_W_ID"])))
 
         ## ----------------
@@ -886,14 +894,21 @@ class MongodbDriver(AbstractDriver):
                             "D_STATE": 1,
                             "D_ZIP": 1}
         if self.find_and_modify:
-            d = self.district.find_one_and_update({"D_ID": d_id, "D_W_ID": w_id,
-                                                   "$comment": comment},
-                                                  {"$inc":{"D_YTD":h_amount}},
-                                                  projection=district_project,
-                                                  session=s)
+            # d = self.district.find_one_and_update({"D_ID": d_id, "D_W_ID": w_id,
+            #                                        "$comment": comment},
+            #                                       {"$inc":{"D_YTD":h_amount}},
+            #                                       projection=district_project,
+            #                                       session=s)
+            d = self.district.find_one_and_update(
+                {"D_ID": d_id, "D_W_ID": w_id},  # Query
+                {"$inc": {"D_YTD": h_amount}},  # Update
+                projection=district_project,
+                session=s,
+                comment=comment)  # Pass comment separately
+
             if not d:
                 d1 = self.district.find_one({"D_ID": d_id, "D_W_ID": w_id, "$comment": "payment did not find district"})
-                print(d1, w_id, d_id, h_amount, c_w_id, c_d_id, c_id, c_last, h_date)
+                print((d1, w_id, d_id, h_amount, c_w_id, c_d_id, c_id, c_last, h_date))
             assert d, "Couldn't find district in payment w_id %d d_id %d" % (w_id, d_id)
         else:
             d = self.district.find_one({"D_W_ID": w_id, "D_ID": d_id, "$comment": comment},
@@ -1083,53 +1098,160 @@ class MongodbDriver(AbstractDriver):
 
         return int(result)
 
+
     def run_transaction(self, txn_callback, session, name, params):
+
+        """
+        Executes a transaction using the provided callback function and session.
+
+        Args:
+            txn_callback (callable): The function to execute within the transaction.
+            session (pymongo.client_session.ClientSession): The session to use for the transaction.
+            name (str): The name of the transaction (used for logging).
+            params (dict): Additional parameters to pass to the transaction callback.
+
+        Returns:
+            tuple: (success, result), where success is a boolean indicating whether
+                the transaction succeeded, and result is the return value of txn_callback or None.
+        """
         if self.no_transactions:
+            # If transactions are disabled, execute the callback directly
             return (True, txn_callback(session, params))
+
         try:
-            # this implicitly commits on success
+            # Start a transaction and execute the callback
             with session.start_transaction():
-                return (True, txn_callback(session, params))
+                logging.debug("Starting transaction for operation: %s", name)
+                result = txn_callback(session, params)
+                logging.debug("Transaction for operation '%s' completed successfully", name)
+                return (True, result)
+
         except pymongo.errors.OperationFailure as exc:
-            # exc.code in (24, 112, 244):  LockTimeout, WriteConflict, TransactionAborted
+            # Handle specific transient transaction errors
             if exc.has_error_label("TransientTransactionError"):
-                logging.debug("OperationFailure with error code: %d (%s) during operation: %s",
-                              exc.code, exc.details, name)
+                logging.debug(
+                    "TransientTransactionError during operation '%s': Code %d, Details: %s",
+                    name, exc.code, exc.details
+                )
                 return (False, None)
-            logging.error("Failed with unknown OperationFailure: %d", exc.code)
-            print("Failed with unknown OperationFailure: %d" % exc.code)
+
+            # Log unknown OperationFailure and re-raise
+            logging.error(
+                "Unknown OperationFailure during operation '%s': Code %d, Details: %s",
+                name, exc.code, exc.details
+            )
+            print(f"OperationFailure during {name}: Code {exc.code}")
             print(exc.details)
             raise
-        except pymongo.errors.ConnectionFailure:
-            print("ConnectionFailure during %s: " % name)
+
+        except pymongo.errors.ConnectionFailure as exc:
+            # Handle connection issues gracefully
+            logging.warning(
+                "ConnectionFailure during operation '%s': %s", name, str(exc)
+            )
+            print(f"ConnectionFailure during {name}: {exc}")
             return (False, None)
-        ## TRY
 
-    # Should we retry txns within the same session or start a new one?
+        except Exception as exc:
+            # Catch and log unexpected exceptions
+            logging.error(
+                "Unexpected error during operation '%s': %s", name, str(exc)
+            )
+            print(f"Unexpected error during {name}: {exc}")
+            raise
+
     def run_transaction_with_retries(self, txn_callback, name, params):
-        txn_retry_counter = 0
-        to = pymongo.client_session.TransactionOptions(
-            read_concern=None,
-            #read_concern=pymongo.read_concern.ReadConcern("snapshot"),
-            write_concern=self.write_concern,
-            read_preference=pymongo.read_preferences.Primary())
-        with self.client.start_session(default_transaction_options=to,
-                                       causal_consistency=self.causal_consistency) as s:
-            while True:
-                (ok, value) = self.run_transaction(txn_callback, s, name, params)
-                if ok:
-                    if txn_retry_counter > 0:
-                        logging.debug("Committed operation %s after %d retries",
-                                      name,
-                                      txn_retry_counter)
-                    return (value, txn_retry_counter)
-                ## IF
+        """
+        Runs a transaction with retries in case of transient errors.
 
-                # backoff a little bit before retry
-                txn_retry_counter += 1
-                sleep(txn_retry_counter * .1)
-                logging.debug("txn retry number for %s: %d", name, txn_retry_counter)
-            ## WHILE
+        Args:
+            txn_callback (callable): The function to execute within the transaction.
+            name (str): The name of the transaction (used for logging).
+            params (dict): Parameters to pass to the transaction callback.
+
+        Returns:
+            tuple: (result, retry_count), where result is the return value of txn_callback
+                and retry_count is the number of retries attempted.
+        """
+        txn_retry_counter = 0
+
+        # Define transaction options
+        transaction_options = TransactionOptions(
+            read_concern=pymongo.read_concern.ReadConcern("snapshot"),
+            write_concern=self.write_concern,
+            read_preference=pymongo.read_preferences.Primary()
+        )
+
+        # Start a session with the transaction options
+        with self.client.start_session(
+            default_transaction_options=transaction_options,
+            causal_consistency=self.causal_consistency
+        ) as session:
+            while True:
+                try:
+                    # Attempt to run the transaction
+                    ok, value = self.run_transaction(txn_callback, session, name, params)
+                    if ok:
+                        if txn_retry_counter > 0:
+                            logging.debug(
+                                "Transaction '%s' committed successfully after %d retries.",
+                                name,
+                                txn_retry_counter
+                            )
+                        return value, txn_retry_counter
+
+                    # If the transaction fails, log and retry
+                    txn_retry_counter += 1
+                    logging.debug(
+                        "Retrying transaction '%s'. Retry count: %d",
+                        name,
+                        txn_retry_counter
+                    )
+                    sleep(txn_retry_counter * 0.1)  # Exponential backoff
+
+                except pymongo.errors.OperationFailure as exc:
+                    # Handle retryable transaction errors
+                    if exc.has_error_label("TransientTransactionError"):
+                        txn_retry_counter += 1
+                        logging.debug(
+                            "TransientTransactionError during '%s'. Retry count: %d. Details: %s",
+                            name,
+                            txn_retry_counter,
+                            exc.details
+                        )
+                        sleep(txn_retry_counter * 0.1)  # Exponential backoff
+                        continue
+
+                    # Log and re-raise non-retryable OperationFailure
+                    logging.error(
+                        "Non-retryable OperationFailure during '%s': Code %d, Details: %s",
+                        name,
+                        exc.code,
+                        exc.details
+                    )
+                    raise
+
+                except pymongo.errors.ConnectionFailure as exc:
+                    # Handle connection failures gracefully
+                    txn_retry_counter += 1
+                    logging.warning(
+                        "ConnectionFailure during '%s'. Retry count: %d. Details: %s",
+                        name,
+                        txn_retry_counter,
+                        str(exc)
+                    )
+                    sleep(txn_retry_counter * 0.1)  # Exponential backoff
+                    continue
+
+                except Exception as exc:
+                    # Log unexpected errors and re-raise
+                    logging.error(
+                        "Unexpected error during '%s'. Details: %s",
+                        name,
+                        str(exc)
+                    )
+                    raise
+
     def get_server_status(self):
         ss=self.client.admin.command('serverStatus')
         if "$configServerState" in ss:
