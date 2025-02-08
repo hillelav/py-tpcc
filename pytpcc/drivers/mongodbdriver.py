@@ -45,115 +45,115 @@ from .abstractdriver import AbstractDriver
 
 TABLE_COLUMNS = {
     constants.TABLENAME_ITEM: [
-        "I_ID", # INTEGER
-        "I_IM_ID", # INTEGER
-        "I_NAME", # VARCHAR
-        "I_PRICE", # FLOAT
-        "I_DATA", # VARCHAR
-        "I_W_ID", # INTEGER
+        ["I_ID", "int", "Cacheable", 4], # INTEGER
+        ["I_IM_ID", "int", "Cacheable", 4], # INTEGER
+        ["I_NAME", "string", "Cacheable", 4], # VARCHAR
+        ["I_PRICE", ["double", "int"], "Cacheable", 8], # FLOAT
+        ["I_DATA", "string", "Cacheable", 50], # VARCHAR
+        ["I_W_ID", "int", "Cacheable", 4] # INTEGER
     ],
     constants.TABLENAME_WAREHOUSE: [
-        "W_ID", # SMALLINT
-        "W_NAME", # VARCHAR
-        "W_STREET_1", # VARCHAR
-        "W_STREET_2", # VARCHAR
-        "W_CITY", # VARCHAR
-        "W_STATE", # VARCHAR
-        "W_ZIP", # VARCHAR
-        "W_TAX", # FLOAT
-        "W_YTD", # FLOAT
+        ["W_ID", "int", "Cacheable", 4], # SMALLINT
+        ["W_NAME", "string", "Cacheable", 20], # VARCHAR
+        ["W_STREET_1", "string", "Cacheable", 20], # VARCHAR
+        ["W_STREET_2", "string", "Cacheable", 20], # VARCHAR
+        ["W_CITY", "string", "Cacheable", 20], # VARCHAR
+        ["W_STATE", "string", "Cacheable", 20], # VARCHAR
+        ["W_ZIP", "string", "Cacheable", 20], # VARCHAR
+        ["W_TAX", ["double", "int"], "Cacheable", 8], # FLOAT
+        ["W_YTD", ["double", "int"], "Cacheable", 8]# FLOAT
     ],
     constants.TABLENAME_DISTRICT: [
-        "D_ID", # TINYINT
-        "D_W_ID", # SMALLINT
-        "D_NAME", # VARCHAR
-        "D_STREET_1", # VARCHAR
-        "D_STREET_2", # VARCHAR
-        "D_CITY", # VARCHAR
-        "D_STATE", # VARCHAR
-        "D_ZIP", # VARCHAR
-        "D_TAX", # FLOAT
-        "D_YTD", # FLOAT
-        "D_NEXT_O_ID", # INT
+        ["D_ID", "int", "Cacheable", 4], # TINYINT
+        ["D_W_ID", "int", "Cacheable", 4], # SMALLINT
+        ["D_NAME", "string", "Cacheable", 20], # VARCHAR
+        ["D_STREET_1", "string", "Cacheable", 20], # VARCHAR
+        ["D_STREET_2", "string", "Cacheable", 20], # VARCHAR
+        ["D_CITY", "string", "Cacheable", 20], # VARCHAR
+        ["D_STATE", "string", "Cacheable", 20], # VARCHAR
+        ["D_ZIP", "string", "Cacheable", 20], # VARCHAR
+        ["D_TAX", ["double", "int"], "Cacheable", 8], # FLOAT
+        ["D_YTD", ["double", "int"], "Cacheable", 8], # FLOAT
+        ["D_NEXT_O_ID", "int", "Cacheable", 4] # INT
     ],
     constants.TABLENAME_CUSTOMER:   [
-        "C_ID", # INTEGER
-        "C_D_ID", # TINYINT
-        "C_W_ID", # SMALLINT
-        "C_FIRST", # VARCHAR
-        "C_MIDDLE", # VARCHAR
-        "C_LAST", # VARCHAR
-        "C_STREET_1", # VARCHAR
-        "C_STREET_2", # VARCHAR
-        "C_CITY", # VARCHAR
-        "C_STATE", # VARCHAR
-        "C_ZIP", # VARCHAR
-        "C_PHONE", # VARCHAR
-        "C_SINCE", # TIMESTAMP
-        "C_CREDIT", # VARCHAR
-        "C_CREDIT_LIM", # FLOAT
-        "C_DISCOUNT", # FLOAT
-        "C_BALANCE", # FLOAT
-        "C_YTD_PAYMENT", # FLOAT
-        "C_PAYMENT_CNT", # INTEGER
-        "C_DELIVERY_CNT", # INTEGER
-        "C_DATA", # VARCHAR
+        ["C_ID", "int", "Cacheable", 4], # INTEGER
+        ["C_D_ID", "int", "Cacheable", 4], # TINYINT
+        ["C_W_ID", "int", "Cacheable", 4], # SMALLINT
+        ["C_FIRST", "string", "Cacheable", 20], # VARCHAR
+        ["C_MIDDLE", "string", "Cacheable", 20], # VARCHAR
+        ["C_LAST", "string", "Cacheable", 20], # VARCHAR
+        ["C_STREET_1", "string", "Cacheable", 20], # VARCHAR
+        ["C_STREET_2", "string", "Cacheable", 20], # VARCHAR
+        ["C_CITY", "string", "Cacheable", 20], # VARCHAR
+        ["C_STATE", "string", "Cacheable", 20], # VARCHAR
+        ["C_ZIP", "string", "Cacheable", 20], # VARCHAR
+        ["C_PHONE", "string", "Cacheable", 20], # VARCHAR
+        ["C_SINCE", "string", "Cacheable", 20], # TIMESTAMP
+        ["C_CREDIT", "string", "Cacheable", 20], # VARCHAR
+        ["C_CREDIT_LIM", ["double", "int"], "Cacheable", 20], # FLOAT
+        ["C_DISCOUNT", ["double", "int"], "Cacheable", 8], # FLOAT
+        ["C_BALANCE", ["double", "int"], "Cacheable", 20], # FLOAT
+        ["C_YTD_PAYMENT", ["double", "int"], "Cacheable", 20], # FLOAT
+        ["C_PAYMENT_CNT", "int", "Cacheable", 20], # INTEGER
+        ["C_DELIVERY_CNT", "int", "Cacheable", 20], # INTEGER
+        ["C_DATA", "string", "Cacheable", 500], # VARCHAR
     ],
     constants.TABLENAME_STOCK:      [
-        "S_I_ID", # INTEGER
-        "S_W_ID", # SMALLINT
-        "S_QUANTITY", # INTEGER
-        "S_DIST_01", # VARCHAR
-        "S_DIST_02", # VARCHAR
-        "S_DIST_03", # VARCHAR
-        "S_DIST_04", # VARCHAR
-        "S_DIST_05", # VARCHAR
-        "S_DIST_06", # VARCHAR
-        "S_DIST_07", # VARCHAR
-        "S_DIST_08", # VARCHAR
-        "S_DIST_09", # VARCHAR
-        "S_DIST_10", # VARCHAR
-        "S_YTD", # INTEGER
-        "S_ORDER_CNT", # INTEGER
-        "S_REMOTE_CNT", # INTEGER
-        "S_DATA", # VARCHAR
+        ["S_I_ID", "int", "Cacheable", 4], # INTEGER
+        ["S_W_ID", "int", "Cacheable", 4], # SMALLINT
+        ["S_QUANTITY", "int", "Cacheable", 4], # INTEGER
+        ["S_DIST_01", "string", "Cacheable", 30], # VARCHAR
+        ["S_DIST_02", "string", "Cacheable", 30], # VARCHAR
+        ["S_DIST_03", "string", "Cacheable", 30], # VARCHAR
+        ["S_DIST_04", "string", "Cacheable", 30], # VARCHAR
+        ["S_DIST_05", "string", "Cacheable", 30], # VARCHAR
+        ["S_DIST_06", "string", "Cacheable", 30], # VARCHAR
+        ["S_DIST_07", "string", "Cacheable", 30], # VARCHAR
+        ["S_DIST_08", "string", "Cacheable", 30], # VARCHAR
+        ["S_DIST_09", "string", "Cacheable", 30], # VARCHAR
+        ["S_DIST_10", "string", "Cacheable", 30], # VARCHAR
+        ["S_YTD", "int", "Cacheable", 4], # INTEGER
+        ["S_ORDER_CNT", "int", "Cacheable", 4], # INTEGER
+        ["S_REMOTE_CNT", "int", "Cacheable", 4], # INTEGER
+        ["S_DATA", "string", "Cacheable", 500] # VARCHAR
     ],
     constants.TABLENAME_ORDERS:     [
-        "O_ID", # INTEGER
-        "O_C_ID", # INTEGER
-        "O_D_ID", # TINYINT
-        "O_W_ID", # SMALLINT
-        "O_ENTRY_D", # TIMESTAMP
-        "O_CARRIER_ID", # INTEGER
-        "O_OL_CNT", # INTEGER
-        "O_ALL_LOCAL", # INTEGER
+        ["O_ID", "int", "Cacheable", 4], # INTEGER
+        ["O_C_ID", "int", "Cacheable", 4], # INTEGER
+        ["O_D_ID", "int", "Cacheable", 4], # TINYINT
+        ["O_W_ID", "int", "Cacheable", 4], # SMALLINT
+        ["O_ENTRY_D", ["timestamp", "string"], "Cacheable", 20], # TIMESTAMP
+        ["O_CARRIER_ID", "int", "Cacheable", 20], # INTEGER
+        ["O_OL_CNT", "int", "Cacheable", 20], # INTEGER
+        ["O_ALL_LOCAL", "int", "Cacheable", 20] # INTEGER
     ],
     constants.TABLENAME_NEW_ORDER:  [
-        "NO_O_ID", # INTEGER
-        "NO_D_ID", # TINYINT
-        "NO_W_ID", # SMALLINT
+        ["NO_O_ID", "int", "Cacheable", 4], # INTEGER
+        ["NO_D_ID", "int", "Cacheable", 4], # TINYINT
+        ["NO_W_ID", "int", "Cacheable", 4] # SMALLINT
     ],
     constants.TABLENAME_ORDER_LINE: [
-        "OL_O_ID", # INTEGER
-        "OL_D_ID", # TINYINT
-        "OL_W_ID", # SMALLINT
-        "OL_NUMBER", # INTEGER
-        "OL_I_ID", # INTEGER
-        "OL_SUPPLY_W_ID", # SMALLINT
-        "OL_DELIVERY_D", # TIMESTAMP
-        "OL_QUANTITY", # INTEGER
-        "OL_AMOUNT", # FLOAT
-        "OL_DIST_INFO", # VARCHAR
+        ["OL_O_ID", "int", "Cacheable", 4], # INTEGER
+        ["OL_D_ID", "int", "Cacheable", 4], # TINYINT
+        ["OL_W_ID", "int", "Cacheable", 4], # SMALLINT
+        ["OL_NUMBER", "int", "Cacheable", 4], # INTEGER
+        ["OL_I_ID", "int", "Cacheable", 4], # INTEGER
+        ["OL_SUPPLY_W_ID", "int", "Cacheable", 4], # SMALLINT
+        ["OL_DELIVERY_D", ["timestamp", "string"], "Cacheable", 20], # TIMESTAMP
+        ["OL_QUANTITY", "int", "Cacheable", 4], # INTEGER
+        ["OL_AMOUNT", "int", "Cacheable", 8], # FLOAT
+        ["OL_DIST_INFO", "string", "Cacheable", 20] # VARCHAR
     ],
     constants.TABLENAME_HISTORY:    [
-        "H_C_ID", # INTEGER
-        "H_C_D_ID", # TINYINT
-        "H_C_W_ID", # SMALLINT
-        "H_D_ID", # TINYINT
-        "H_W_ID", # SMALLINT
-        "H_DATE", # TIMESTAMP
-        "H_AMOUNT", # FLOAT
-        "H_DATA", # VARCHAR
+        ["H_C_ID", "int", "Cacheable", 4], # INTEGER
+        ["H_C_D_ID", "int", "Cacheable", 4], # TINYINT
+        ["H_C_W_ID", "int", "Cacheable", 4], # SMALLINT
+        ["H_D_ID", "int", "Cacheable", 4], # TINYINT
+        ["H_W_ID", "int", "Cacheable", 4], # SMALLINT
+        ["H_DATE", ["timestamp", "string"], "Cacheable", 8], # TIMESTAMP
+        ["H_AMOUNT", "int", "Cacheable", 4], # FLOAT
+        ["H_DATA", "string", "Cacheable", 20] # VARCHAR
     ],
 }
 
@@ -199,7 +199,7 @@ class MongodbDriver(AbstractDriver):
         "notransactions":   ("If true, transactions will not be used (benchmarking only)", False),
         "findandmodify":    ("If true, all things to update will be fetched via findAndModify", True),
         "secondary_reads":  ("If true, we will allow secondary reads", True),
-        "retry_writes":     ("If true, we will enable retryable writes", True),
+        "retry_writes":     ("If true, we will enable retryable writes", False),
         "causal_consistency":  ("If true, we will perform causal reads ", True),
         "shards":          ("If >1 then sharded", "1")
     }
@@ -225,7 +225,7 @@ class MongodbDriver(AbstractDriver):
         # initialize
         self.causal_consistency = False
         self.secondary_reads = False
-        self.retry_writes = True
+        self.retry_writes = False
         self.read_concern = "majority"
         self.write_concern = pymongo.write_concern.WriteConcern(w=1)
         self.denormalize = True
@@ -324,6 +324,8 @@ class MongodbDriver(AbstractDriver):
                            ('load' in config and not config['load'])
 
             for name in constants.ALL_TABLES:
+                self.createCollection(name)
+
                 if self.denormalize and name == "ORDER_LINE":
                     continue
                 self.__dict__[name.lower()] = self.database[name]
@@ -351,12 +353,56 @@ class MongodbDriver(AbstractDriver):
             print(("Got some other error: %s" % str(err)))
             return
 
+    def generate_json_schema(self, table_name):
+        # Map your types to BSON types
+        type_mapping = {
+            "int": "int",
+            "string": "string",
+            "float": "double"  # MongoDB uses "double" for floating-point numbers
+        }
+        
+        # Get the column definitions for the given table
+        columns = TABLE_COLUMNS.get(table_name, [])
+        
+        # Build the JSON schema properties
+        properties = {}
+        for column in columns:
+            maxLength = 4
+            column_name, column_type, description, l = column
+            # bson_type = type_mapping.get(column_type.lower(), "string")  # Default to string if unknown
+            # if bson_type == "string":
+            if  "string" in column_type:
+                maxLength = l
+            properties[column_name] = {
+                "bsonType": column_type,
+                "maxLength": maxLength,
+                "description": description
+            }
+        
+        # Assemble the full schema
+        json_schema = {
+            "$jsonSchema": {
+                "bsonType": "object",
+                "properties": properties
+            }
+        }
+        
+        return json_schema
+
+
+    def createCollection(self, tableName):
+        self.database[tableName].drop() 
+        user_schema = self.generate_json_schema(tableName)
+        self.database.create_collection(tableName, validator=user_schema)
+
+
     ## ----------------------------------------------
     ## loadTuples
     ## ----------------------------------------------
     def loadTuples(self, tableName, tuples):
         if not tuples:
             return
+
         logging.debug("Loading %d tuples for tableName %s", len(tuples), tableName)
 
         assert tableName in TABLE_COLUMNS, "Table %s not found in TABLE_COLUMNS" % tableName
@@ -373,7 +419,7 @@ class MongodbDriver(AbstractDriver):
                 for t in tuples:
                     key = tuple(t[:1]+t[2:4]) # O_ID, O_C_ID, O_D_ID, O_W_ID
                     # self.w_orders[key] = dict(map(lambda i: (columns[i], t[i]), num_columns))
-                    self.w_orders[key] = dict([(columns[i], t[i]) for i in num_columns])
+                    self.w_orders[key] = dict([(columns[i][0], t[i]) for i in num_columns])
                 ## FOR
             ## IF
 
@@ -386,7 +432,7 @@ class MongodbDriver(AbstractDriver):
                     o = self.w_orders[o_key]
                     if not tableName in o:
                         o[tableName] = []
-                    o[tableName].append(dict([(columns[i], t[i]) for i in num_columns[4:]]))
+                    o[tableName].append(dict([(columns[i][0], t[i]) for i in num_columns[4:]]))
                 ## FOR
 
             ## Otherwise nothing
@@ -411,7 +457,7 @@ class MongodbDriver(AbstractDriver):
                     logging.error(f"Mismatch: columns({len(columns)}): {columns}, tuple({len(t)}): {t}")
                     raise ValueError(f"Mismatch between columns and tuple data: columns({len(columns)}), tuple({len(t)})")
 
-                tuple_dicts.append(dict([(columns[i], t[i]) for i in num_columns]))
+                tuple_dicts.append(dict([(columns[i][0], t[i]) for i in num_columns]))
             ## FOR
 
             self.database[tableName].insert_many(tuple_dicts)
@@ -650,9 +696,11 @@ class MongodbDriver(AbstractDriver):
         o_carrier_id = constants.NULL_CARRIER_ID
 
         # createNewOrder
-
-        self.new_order.insert_one({"NO_O_ID": d_next_o_id, "NO_D_ID": d_id, "NO_W_ID": w_id}, session=s)
-
+        try:
+            self.new_order.insert_one({"NO_O_ID": d_next_o_id, "NO_D_ID": d_id, "NO_W_ID": w_id}, session=s)
+        except Exception as e:
+            print(f"Error in insertion: {e}")
+            
         all_local = 1 if ([w_id] * len(i_w_ids)) == i_w_ids else 0
         o = {"O_ID": d_next_o_id, "O_ENTRY_D": o_entry_d,
              "O_CARRIER_ID": o_carrier_id, "O_OL_CNT": ol_cnt, "O_ALL_LOCAL": all_local}
@@ -986,6 +1034,9 @@ class MongodbDriver(AbstractDriver):
         h_data = "%s    %s" % (w["W_NAME"], d["D_NAME"])
 
         h = {"H_D_ID": d_id,
+             "H_C_ID": c_id,
+             "H_C_W_ID": c_w_id,
+             "H_C_D_ID": c_d_id,
              "H_W_ID": w_id,
              "H_DATE": h_date,
              "H_AMOUNT": h_amount,
@@ -1118,13 +1169,19 @@ class MongodbDriver(AbstractDriver):
             # If transactions are disabled, execute the callback directly
             return (True, txn_callback(session, params))
 
+        # Start a transaction and execute the callback
+        session.start_transaction()
         try:
-            # Start a transaction and execute the callback
-            with session.start_transaction():
-                logging.debug("Starting transaction for operation: %s", name)
-                result = txn_callback(session, params)
-                logging.debug("Transaction for operation '%s' completed successfully", name)
-                return (True, result)
+            logging.debug("Starting transaction for operation: %s", name)
+            result = txn_callback(session, params)
+            logging.debug("Transaction for operation '%s' completed successfully", name)
+            # Commit the transaction if everything is successful
+            session.commit_transaction()
+            return (True, result)
+        except Exception as e:
+            # Abort the transaction in case of an error
+            print(f"Error: {e}")
+            session.abort_transaction()
 
         except pymongo.errors.OperationFailure as exc:
             # Handle specific transient transaction errors
