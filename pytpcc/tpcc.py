@@ -68,10 +68,16 @@ def createDriverClass(name):
 ## getDrivers
 ## ==============================================
 def getDrivers():
+    # Get the absolute path to the directory containing this script
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    drivers_dir = os.path.join(script_dir, "drivers")
+        
     drivers = []
-    for f in [os.path.basename(drv).replace("driver.py", "") for drv in glob.glob("./drivers/*driver.py")]:
-        if f != "abstract":
-            drivers.append(f)
+    for drv in glob.glob(os.path.join(drivers_dir, "*driver.py")):
+        driver_name = os.path.basename(drv).replace("driver.py", "")
+        if driver_name != "abstract":  # Exclude abstract driver
+            drivers.append(driver_name)
+    
     return drivers
 ## DEF
 
@@ -228,7 +234,7 @@ if __name__ == '__main__':
     assert driver != None, "Failed to create '%s' driver" % args['system']
     if args['print_config']:
         config = driver.makeDefaultConfig()
-        print(driver.formatConfig(config))
+        print((driver.formatConfig(config)))
         print()
         sys.exit(0)
 
@@ -241,7 +247,7 @@ if __name__ == '__main__':
     else:
         logging.debug("Using default configuration for %s", args['system'])
         defaultConfig = driver.makeDefaultConfig()
-        config = dict([(param, defaultConfig[param][1]) for param in defaultConfig.keys()])
+        config = dict([(param, defaultConfig[param][1]) for param in list(defaultConfig.keys())])
     config['reset'] = args['reset']
     config['load'] = False
     config['execute'] = False
@@ -265,7 +271,7 @@ if __name__ == '__main__':
             l = loader.Loader(
                 driver,
                 scaleParameters,
-                range(scaleParameters.starting_warehouse, scaleParameters.ending_warehouse+1),
+                list(range(scaleParameters.starting_warehouse, scaleParameters.ending_warehouse+1)),
                 True
             )
             driver.loadStart()

@@ -43,12 +43,13 @@ from pymongo.client_session import TransactionOptions
 import constants
 from .abstractdriver import AbstractDriver
 
+
 TABLE_COLUMNS = {
     constants.TABLENAME_ITEM: [
         ["I_ID", "int", "Cacheable", 4], # INTEGER
         ["I_IM_ID", "int", "Cacheable", 4], # INTEGER
         ["I_NAME", "string", "Cacheable", 4], # VARCHAR
-        ["I_PRICE", ["double", "int"], "Cacheable", 8], # FLOAT
+        ["I_PRICE", ["double", "int"], "Cacheable", 5], # FLOAT
         ["I_DATA", "string", "Cacheable", 50], # VARCHAR
         ["I_W_ID", "int", "Cacheable", 4] # INTEGER
     ],
@@ -123,7 +124,7 @@ TABLE_COLUMNS = {
         ["O_C_ID", "int", "Cacheable", 4], # INTEGER
         ["O_D_ID", "int", "Cacheable", 4], # TINYINT
         ["O_W_ID", "int", "Cacheable", 4], # SMALLINT
-        ["O_ENTRY_D", ["timestamp", "string"], "Cacheable", 20], # TIMESTAMP
+        ["O_ENTRY_D", ["date", "string"], "Cacheable", 20], # TIMESTAMP
         ["O_CARRIER_ID", "int", "Cacheable", 20], # INTEGER
         ["O_OL_CNT", "int", "Cacheable", 20], # INTEGER
         ["O_ALL_LOCAL", "int", "Cacheable", 20] # INTEGER
@@ -140,10 +141,10 @@ TABLE_COLUMNS = {
         ["OL_NUMBER", "int", "Cacheable", 4], # INTEGER
         ["OL_I_ID", "int", "Cacheable", 4], # INTEGER
         ["OL_SUPPLY_W_ID", "int", "Cacheable", 4], # SMALLINT
-        ["OL_DELIVERY_D", ["timestamp", "string"], "Cacheable", 20], # TIMESTAMP
+        ["OL_DELIVERY_D", ["date", "string"], "Cacheable", 20], # TIMESTAMP
         ["OL_QUANTITY", "int", "Cacheable", 4], # INTEGER
-        ["OL_AMOUNT", "int", "Cacheable", 8], # FLOAT
-        ["OL_DIST_INFO", "string", "Cacheable", 20] # VARCHAR
+        ["OL_AMOUNT", ["double", "int"], "Cacheable", 8], # FLOAT
+        ["OL_DIST_INFO", "string", "Cacheable", 24] # VARCHAR
     ],
     constants.TABLENAME_HISTORY:    [
         ["H_C_ID", "int", "Cacheable", 4], # INTEGER
@@ -228,7 +229,7 @@ class MongodbDriver(AbstractDriver):
         self.retry_writes = False
         self.read_concern = "majority"
         self.write_concern = pymongo.write_concern.WriteConcern(w=1)
-        self.denormalize = True
+        self.denormalize = False
         self.output = open('results.json','a')
         self.result_doc = {}
         self.warehouses = 0
@@ -259,7 +260,7 @@ class MongodbDriver(AbstractDriver):
                 config[key] = str(MongodbDriver.DEFAULT_CONFIG[key][1])
 
         logging.debug("Default plus our config %s", pformat(config))
-        self.denormalize = config['denormalize'] == 'True'
+        self.denormalize = config['denormalize'] == 'False'
         self.no_transactions = config['notransactions'] == 'True'
         self.shards = int(config['shards'])
         self.warehouses = config['warehouses']
@@ -426,13 +427,18 @@ class MongodbDriver(AbstractDriver):
             ## If this is an ORDER_LINE record, then we need to stick it inside of the
             ## right ORDERS record
             elif tableName == constants.TABLENAME_ORDER_LINE:
-                for t in tuples:
-                    o_key = tuple(t[:3]) # O_ID, O_D_ID, O_W_ID
-                    assert o_key in self.w_orders, "Order Key: %s\nAll Keys:\n%s" % (str(o_key), "\n".join(map(str, sorted(self.w_orders.keys()))))
-                    o = self.w_orders[o_key]
-                    if not tableName in o:
-                        o[tableName] = []
-                    o[tableName].append(dict([(columns[i][0], t[i]) for i in num_columns[4:]]))
+                try:
+                    for t in tuples:
+                        o_key = tuple(t[:3]) # O_ID, O_D_ID, O_W_ID
+                        assert o_key in self.w_orders, "Order Key: %s\nAll Keys:\n%s" % (str(o_key), "\n".join(map(str, sorted(self.w_orders.keys()))))
+                        o = self.w_orders[o_key]
+                        if not tableName in o:
+                            o[tableName] = []
+                        o[tableName].append(dict([(columns[i][0], t[i]) for i in num_columns[4:]]))
+                except Exception as e:
+                    print(f"Error: {e}")
+                else:
+                    print("ORDER_LINE Loaded")
                 ## FOR
 
             ## Otherwise nothing
@@ -548,6 +554,9 @@ class MongodbDriver(AbstractDriver):
                                                     {"$set": {"O_CARRIER_ID": o_carrier_id,
                                                               "ORDER_LINE.$[].OL_DELIVERY_D": ol_delivery_d}},
                                                     session=s)
+                # o = self.orders.find_one_and_update(order_query,
+                #                                     {"$set": {"O_CARRIER_ID": o_carrier_id}},
+                #                                     session=s)
             else:
                 o = self.orders.find_one(order_query, session=s)
         else:
@@ -1176,12 +1185,13 @@ class MongodbDriver(AbstractDriver):
             result = txn_callback(session, params)
             logging.debug("Transaction for operation '%s' completed successfully", name)
             # Commit the transaction if everything is successful
-            session.commit_transaction()
+            if session.in_transaction:
+                session.commit_transaction()
             return (True, result)
         except Exception as e:
-            # Abort the transaction in case of an error
-            print(f"Error: {e}")
-            session.abort_transaction()
+            # Abort the transaction in case of an error            print(f"Error: {e}")
+            if session.in_transaction:
+                session.abort_transaction()
 
         except pymongo.errors.OperationFailure as exc:
             # Handle specific transient transaction errors
@@ -1247,7 +1257,11 @@ class MongodbDriver(AbstractDriver):
             while True:
                 try:
                     # Attempt to run the transaction
-                    ok, value = self.run_transaction(txn_callback, session, name, params)
+                    try:
+                        ok, value = self.run_transaction(txn_callback, session, name, params)
+                    except Exception as e:
+                        print(f"Error: {e}")
+                        
                     if ok:
                         if txn_retry_counter > 0:
                             logging.debug(
